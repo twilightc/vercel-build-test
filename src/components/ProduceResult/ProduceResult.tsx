@@ -27,13 +27,13 @@ export default function ProduceResult({ urlCode }: { urlCode: string }) {
         ref={shortUrlRef}
         className="w-full h-[40px] rounded-[8px] px-[8px]"
         type="text"
-        value={`${apiUrl}/` + urlCode}
+        value={`${window.location.origin}/` + urlCode}
         readOnly
       />
       <div className="flex items-center justify-start gap-[10px]">
         <a
           className="p-[5px] bg-[#ffffff] border-[1px] border-solid border-[#087da8] text-[#087da8] rounded-[8px]"
-          href={`${apiUrl}/` + urlCode}
+          href={`${window.location.origin}/` + urlCode}
           target="_blank"
         >
           Visit it
