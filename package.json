@@ -21,6 +21,7 @@
     "@prisma/client": "^5.10.2",
     "@types/react-transition-group": "^4.4.10",
     "@types/valid-url": "^1.0.7",
+    "@vercel/kv": "^1.0.1",
     "@vercel/postgres": "^0.7.2",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.10",

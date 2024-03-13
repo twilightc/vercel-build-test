@@ -11,18 +11,19 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   // Uses connection pooling
-  url = env("POSTGRES_PRISMA_URL")
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model ShortenedUrl {
-  shortenedUrl     String   @id
-  urlCode String            @unique
-  originalUrl String
-  createDate  DateTime
-  expireDate  DateTime
-  userId      Int
+  shortenedUrl String   @id
+  urlCode      String   @unique
+  originalUrl  String
+  createDate   DateTime
+  expireDate   DateTime
+  userId       Int
 }
 
 model User {

@@ -17,10 +17,6 @@ export const POST = async (req: NextRequest) => {
   const host = req.headers.get('host') ?? '';
   const { shortUrlCode, fullShortenUrl } = generateShortUrl(host);
 
-
-  // console.log('vavavavdvfadvd');
-  // console.log(await prisma.shortenedUrl);
-
   // if url has existed then return it, or create a new one
   try {
     const result = await prisma.$transaction(async (tx) => {
