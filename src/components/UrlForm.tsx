@@ -9,11 +9,21 @@ export default function UrlForm() {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const [urlCode, setUrlCode] = useState('');
+  // const [urlCode, setUrlCode] = useState('');
 
-  // should i check whether url indeed avaliable or not?
+  const [shortUrlInfo, setShortUrlInfo] = useState<{
+    urlCode?: string;
+    ogInfo?: {
+      title: string;
+      siteName: string;
+      image: string;
+      description: string;
+    };
+  } | null>(null);
+
+  // check whether url is avaliable indeed
   // may add debounce effect/ usecallback(not so good?)
-  const handleShortenUrl = async () => {
+  const handleProducingShortUrl = async () => {
     setIsLoading(true);
 
     const result = await fetch('api/create', {
@@ -22,36 +32,56 @@ export default function UrlForm() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userId: 123,
-        url: originUrl,
+        originUrl,
       }),
-      cache: 'no-store',
+      // cache: 'no-store',
     });
 
     const data = (await result.json()) as {
+      id: string;
       shortenedUrl: string;
       urlCode: string;
       originalUrl: string;
       createDate: Date;
       expireDate: Date;
-      userId: number;
+      ogInfo: {
+        siteName: string;
+        title: string;
+        image: string;
+        description: string;
+      };
     };
 
     if (result.status === 200 && data) {
-      setUrlCode(data.urlCode);
+      // setUrlCode(data.urlCode);
+      setShortUrlInfo({
+        urlCode: data.urlCode,
+        ogInfo: {
+          ...data.ogInfo,
+          title:
+            data.ogInfo.title.length > 15
+              ? data.ogInfo.title.substring(0, 14) + '...'
+              : data.ogInfo.title,
+          description:
+            data.ogInfo.description.length > 20
+              ? data.ogInfo.description.substring(0, 19) + '...'
+              : data.ogInfo.description,
+        },
+      });
     }
 
     setIsLoading(false);
   };
 
   return (
-    <div className="flex flex-col gap-[30px] max-w-[300px] w-[100%]">
+    <div className="flex flex-col gap-[30px] max-w-[500px] w-[100%]">
       <form
         className="grid gap-[10px]"
         onSubmit={(e) => {
           e.preventDefault();
-          setUrlCode('')
-          handleShortenUrl();
+          // setUrlCode('');
+          setShortUrlInfo(null);
+          handleProducingShortUrl();
         }}
       >
         <div>
@@ -73,17 +103,25 @@ export default function UrlForm() {
             type="submit"
             disabled={isLoading}
           >
-           <div className='flex items-center justify-center'>
-           {isLoading && (
-              <div className="animate-spin rounded-full h-[20px] w-[20px] mr-[6px] border-t-2 border-b-2 border-gray-900"></div>
-            )}
-            <span className='text-[#fff]'>{isLoading ? 'Processing...' : 'Shorten it'}</span>
-           </div>
+            <div className="flex items-center justify-center">
+              {isLoading && (
+                <div className="animate-spin rounded-full h-[20px] w-[20px] mr-[6px] border-t-2 border-b-2 border-gray-900"></div>
+              )}
+              <span className="text-[#fff]">
+                {isLoading ? 'Processing...' : 'Shorten it'}
+              </span>
+            </div>
           </button>
         </div>
       </form>
       {isLoading && <Loading></Loading>}
-      {urlCode && <ProduceResult urlCode={urlCode}></ProduceResult>}
+      {/* {shortUrlInfo && <ProduceResult urlCode={shortUrlInfo}></ProduceResult>} */}
+      {shortUrlInfo && (
+        <ProduceResult
+          urlCode={shortUrlInfo.urlCode}
+          ogInfo={shortUrlInfo.ogInfo}
+        ></ProduceResult>
+      )}
     </div>
   );
 }

@@ -18,12 +18,24 @@ datasource db {
 }
 
 model ShortenedUrl {
-  shortenedUrl String   @id
-  urlCode      String   @unique
+  id           String        @id @default(uuid())
+  shortenedUrl String
+  urlCode      String        @unique
   originalUrl  String
   createDate   DateTime
   expireDate   DateTime
-  userId       Int
+  OpenGraphTag OpenGraphTag?
+}
+
+model OpenGraphTag {
+  id           String       @id @default(uuid())
+  url          String
+  title        String
+  description  String
+  image        String
+  siteName     String
+  shortenedUrl ShortenedUrl @relation(fields: [tagId], references: [id])
+  tagId        String       @unique
 }
 
 model User {
