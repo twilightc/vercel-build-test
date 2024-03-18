@@ -1,92 +1,84 @@
+'use server'
 import { prisma } from '@/lib';
 import { redirect } from 'next/dist/client/components/navigation';
 import { kv } from '@vercel/kv';
 import dayjs from 'dayjs';
 import { Metadata, ResolvingMetadata } from 'next';
+import { error } from 'console';
 
-// first, add use server to get data from potgresql
-// second, return info including HEAD tag(html part)
+const getUrlInfoByShortenCode = async (code: string) => kv.get<{
+  originalUrl: string;
+  id: string;
+}>(`${code}`);
+
+
 export async function generateMetadata({
   params,
+
 }: {
   params: { shortenedCode: string };
 }): Promise<Metadata> {
   const shortenedCode = params.shortenedCode ?? '';
 
-  const result = (await kv.get<string>(`${shortenedCode}`)) ?? '';
 
-  const getOriginalUrl = async () => {
-    return await prisma.shortenedUrl.findFirst({
+  const urlFromKv = await kv.get<{
+    originalUrl: string;
+    id: string;
+  }>(`${shortenedCode}`);
+
+  if (!urlFromKv || urlFromKv?.originalUrl === '') {
+    const getOriginalUrl = async () => {
+      return await prisma.shortenedUrl.findFirst({
+        where: {
+          urlCode: shortenedCode,
+        },
+      });
+    };
+    const originalUrl = await getOriginalUrl();
+
+    const urlOgInfo = await prisma.openGraphTag.findUnique({
       where: {
-        urlCode: shortenedCode,
+        tagId: originalUrl?.id ?? '',
       },
     });
-  };
-  const originalUrl = await getOriginalUrl();
 
-  const urlOgInfo = await prisma.openGraphTag.findUnique({
-    where: {
-      tagId: originalUrl?.id ?? '',
-    },
-  });
-
-  return {
-    title: urlOgInfo?.title,
-    description:'can u see me?',
-    openGraph: {
-      url: urlOgInfo?.url,
+    if (urlOgInfo) {
+    }
+    return {
       title: urlOgInfo?.title,
-      siteName: urlOgInfo?.siteName,
-      images: [{url:urlOgInfo?.image??''}],
-      description: urlOgInfo?.description
-    },
-  };
-  // if (result === '') {
-  //   const getOriginalUrl = async () => {
-  //     return await prisma.shortenedUrl.findFirst({
-  //       where: {
-  //         urlCode: shortenedCode,
-  //       },
-  //     });
-  //   };
-  //   const originalUrl = await getOriginalUrl();
+      description: 'can u see me?',
+      openGraph: {
+        url: urlOgInfo?.url,
+        title: urlOgInfo?.title,
+        siteName: urlOgInfo?.siteName,
+        images: [{ url: urlOgInfo?.image ?? '' }],
+        description: urlOgInfo?.description,
+      },
+    };
+  } else {
+    const ogFromKv = await kv.get<{
+      id: string;
+      url: string;
+      title: string;
+      description: string;
+      image: string;
+      siteName: string;
+      tagId: string;
+    }>(urlFromKv.id);
 
-  //   const urlOgInfo = await prisma.openGraphTag.findUnique({
-  //     where: {
-  //       tagId: originalUrl?.id ?? '',
-  //     },
-  //   });
-
-  //   if (urlOgInfo) {
-  //   }
-  //   // await kv.set(`${shortenedCode}`, `${result?.originalUrl}`, {
-  //   //   ex: 3600 * 6,
-  //   // });
-
-  //   console.log('fskalnalflak');
-  //   console.log(urlOgInfo);
-
-  //   return {
-  //     title: urlOgInfo?.title,
-  //     description:'can u see me?',
-  //     openGraph: {
-  //       url: urlOgInfo?.url,
-  //       title: urlOgInfo?.title,
-  //       siteName: urlOgInfo?.siteName,
-  //       images: [{url:urlOgInfo?.image??''}],
-  //       description: urlOgInfo?.description
-  //     },
-  //   };
-  // } else {
-  //   // get result from redis? is that need?
-
-  //   return {
-  //     title: '',
-  //     openGraph: { },
-  //   };
-  // }
+    return {
+      title: ogFromKv?.title,
+      description: 'can u see me?',
+      openGraph: {
+        url: ogFromKv?.url,
+        title: ogFromKv?.title,
+        siteName: ogFromKv?.siteName,
+        images: [{ url: ogFromKv?.image ?? '' }],
+        description: ogFromKv?.description,
+      },
+    };
+  }
 }
-//
 
 export default async function ShortUrl({
   params,
@@ -95,12 +87,10 @@ export default async function ShortUrl({
 }) {
   const shortenedCode = params.shortenedCode ?? '';
 
-  const result = (await kv.get<string>(`${shortenedCode}`)) ?? '';
+  const result = await getUrlInfoByShortenCode(shortenedCode);
 
-  if (result !== '') {
-    // redirect(`${result}`);
-
-    return <>test</>;
+  if (result && result.originalUrl !== '') {
+    redirect(result?.originalUrl ?? '/');
   } else {
     const getOriginalUrl = async () => {
       return await prisma.shortenedUrl.findFirst({
@@ -118,13 +108,42 @@ export default async function ShortUrl({
     }
 
     if (result?.originalUrl) {
-      await kv.set(`${shortenedCode}`, `${result?.originalUrl}`, {
-        ex: 3600 * 6,
-      });
+      try {
+        const urlOgInfo = await prisma.openGraphTag.findUnique({
+          where: {
+            tagId: result?.id ?? '',
+          },
+        });
+
+        // due to distributed serverless service, kv doesn't provide watch method to guarantee atomicity
+        await kv
+          .multi()
+          .set(
+            `${shortenedCode}`,
+            {
+              originalUrl: result.originalUrl,
+              id: result.id,
+            },
+            {
+              ex: 3600 * 6,
+            }
+          )
+          .set(
+            `${result.id}`,
+            {
+              ...urlOgInfo,
+            },
+            {
+              ex: 3600 * 6,
+            }
+          )
+          .exec()
+      } catch (error) {
+        console.log('error occured during save to kv');
+      }
     }
 
-    // redirect(result?.originalUrl ?? '/');
 
-    return <>test</>;
+    redirect(result?.originalUrl ?? '/');
   }
 }
