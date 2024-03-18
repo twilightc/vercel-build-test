@@ -15,50 +15,76 @@ export async function generateMetadata({
 
   const result = (await kv.get<string>(`${shortenedCode}`)) ?? '';
 
-  if (result === '') {
-    const getOriginalUrl = async () => {
-      return await prisma.shortenedUrl.findFirst({
-        where: {
-          urlCode: shortenedCode,
-        },
-      });
-    };
-    const originalUrl = await getOriginalUrl();
-
-    const urlOgInfo = await prisma.openGraphTag.findUnique({
+  const getOriginalUrl = async () => {
+    return await prisma.shortenedUrl.findFirst({
       where: {
-        tagId: originalUrl?.id ?? '',
+        urlCode: shortenedCode,
       },
     });
+  };
+  const originalUrl = await getOriginalUrl();
 
-    if (urlOgInfo) {
-    }
-    // await kv.set(`${shortenedCode}`, `${result?.originalUrl}`, {
-    //   ex: 3600 * 6,
-    // });
+  const urlOgInfo = await prisma.openGraphTag.findUnique({
+    where: {
+      tagId: originalUrl?.id ?? '',
+    },
+  });
 
-    console.log('fskalnalflak');
-    console.log(urlOgInfo);
-
-    return {
+  return {
+    title: urlOgInfo?.title,
+    description:'can u see me?',
+    openGraph: {
+      url: urlOgInfo?.url,
       title: urlOgInfo?.title,
-      description:'can u see me?',
-      openGraph: {
-        url: urlOgInfo?.url,
-        title: urlOgInfo?.title,
-        siteName: urlOgInfo?.siteName,
-        images: [{url:urlOgInfo?.image??''}],
-        description: urlOgInfo?.description
-      },
-    };
-  } else {
-    // get result from redis? is that need?
+      siteName: urlOgInfo?.siteName,
+      images: [{url:urlOgInfo?.image??''}],
+      description: urlOgInfo?.description
+    },
+  };
+  // if (result === '') {
+  //   const getOriginalUrl = async () => {
+  //     return await prisma.shortenedUrl.findFirst({
+  //       where: {
+  //         urlCode: shortenedCode,
+  //       },
+  //     });
+  //   };
+  //   const originalUrl = await getOriginalUrl();
 
-    return {
-      title: '',
-      openGraph: { },
-    };
-  }
+  //   const urlOgInfo = await prisma.openGraphTag.findUnique({
+  //     where: {
+  //       tagId: originalUrl?.id ?? '',
+  //     },
+  //   });
+
+  //   if (urlOgInfo) {
+  //   }
+  //   // await kv.set(`${shortenedCode}`, `${result?.originalUrl}`, {
+  //   //   ex: 3600 * 6,
+  //   // });
+
+  //   console.log('fskalnalflak');
+  //   console.log(urlOgInfo);
+
+  //   return {
+  //     title: urlOgInfo?.title,
+  //     description:'can u see me?',
+  //     openGraph: {
+  //       url: urlOgInfo?.url,
+  //       title: urlOgInfo?.title,
+  //       siteName: urlOgInfo?.siteName,
+  //       images: [{url:urlOgInfo?.image??''}],
+  //       description: urlOgInfo?.description
+  //     },
+  //   };
+  // } else {
+  //   // get result from redis? is that need?
+
+  //   return {
+  //     title: '',
+  //     openGraph: { },
+  //   };
+  // }
 }
 //
 
