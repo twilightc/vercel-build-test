@@ -39,6 +39,7 @@ export const POST = async (req: NextRequest) => {
         return {
           ...existedUrl,
           ogInfo: {
+            url: existedUrlWithOgInfo?.url || '',
             title: existedUrlWithOgInfo?.title || '',
             siteName: existedUrlWithOgInfo?.siteName || '',
             image: existedUrlWithOgInfo?.image || '',
@@ -82,6 +83,7 @@ export const POST = async (req: NextRequest) => {
         return {
           ...shortUrl,
           ogInfo: {
+            url: ogMeta.url,
             siteName: ogMeta.siteName,
             title: ogMeta.title,
             image: ogMeta.image,

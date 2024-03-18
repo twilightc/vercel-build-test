@@ -6,9 +6,11 @@ import { Metadata, ResolvingMetadata } from 'next';
 
 // first, add use server to get data from potgresql
 // second, return info including HEAD tag(html part)
-export async function generateMetadata(
-  { params }: { params: { shortenedCode: string } }
-): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: { shortenedCode: string };
+}): Promise<Metadata> {
   const shortenedCode = params.shortenedCode ?? '';
 
   const result = (await kv.get<string>(`${shortenedCode}`)) ?? '';
@@ -38,12 +40,12 @@ export async function generateMetadata(
     console.log('fskalnalflak');
     console.log(urlOgInfo);
 
-
     return {
       title: urlOgInfo?.title,
       description:'can u see me?',
       openGraph: {
-        // title: urlOgInfo?title,
+        url: urlOgInfo?.url,
+        title: urlOgInfo?.title,
         siteName: urlOgInfo?.siteName,
         images: [{url:urlOgInfo?.image??''}],
         description: urlOgInfo?.description
@@ -70,7 +72,9 @@ export default async function ShortUrl({
   const result = (await kv.get<string>(`${shortenedCode}`)) ?? '';
 
   if (result !== '') {
-    redirect(`${result}`);
+    // redirect(`${result}`);
+
+    return <>test</>;
   } else {
     const getOriginalUrl = async () => {
       return await prisma.shortenedUrl.findFirst({
@@ -87,17 +91,14 @@ export default async function ShortUrl({
       // redirect('404 page link');
     }
 
-    // if (result?.originalUrl) {
-    //   await kv.set(`${shortenedCode}`, `${result?.originalUrl}`, {
-    //     ex: 3600 * 6,
-    //   });
-    // }
     if (result?.originalUrl) {
       await kv.set(`${shortenedCode}`, `${result?.originalUrl}`, {
         ex: 3600 * 6,
       });
     }
 
-    redirect(result?.originalUrl ?? '/');
+    // redirect(result?.originalUrl ?? '/');
+
+    return <>test</>;
   }
 }
