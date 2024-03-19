@@ -5,6 +5,9 @@ import { NextRequest } from 'next/server';
 import run from 'open-graph-scraper';
 
 export const POST = async (req: NextRequest) => {
+  console.log('test git emoji');
+
+
   if (req.method !== 'POST') {
     return Response.json('only permit POST method', { status: 405 });
   }
